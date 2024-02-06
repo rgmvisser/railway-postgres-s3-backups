@@ -1,4 +1,4 @@
-FROM node:18-bullseye-slim as base
+FROM node:18-bullseye-slim as build
 
 RUN apk add --update --no-cache nodejs npm
 
@@ -14,7 +14,7 @@ RUN npm install && \
     npm run build && \
     npm prune --production
 
-FROM base as build
+FROM build as app
 
 WORKDIR /root
 
