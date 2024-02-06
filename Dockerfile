@@ -1,7 +1,5 @@
 FROM node:18-bullseye-slim as build
 
-RUN apk add --update --no-cache nodejs npm
-
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
 
@@ -21,10 +19,9 @@ WORKDIR /root
 COPY --from=build /root/node_modules ./node_modules
 COPY --from=build /root/dist ./dist
 
-ARG PG_VERSION='16'
+# ARG PG_VERSION='16' not used anymore
 
-RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main && \
-    apk add --update --no-cache nodejs npm
+RUN apt-get update && apt-get install -y postgresql-client
 
 CMD sleep 5 && \
     node dist/index.js
