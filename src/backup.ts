@@ -1,7 +1,7 @@
 import { exec, execSync } from "child_process";
 import { S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
-import { createReadStream, unlink, statSync } from "fs";
+import { createReadStream, unlink, statSync, rm } from "fs";
 import { filesize } from "filesize";
 import path from "path";
 import os from "os";
@@ -36,56 +36,82 @@ const uploadToS3 = async ({ name, path }: { name: string; path: string }) => {
   console.log("Backup uploaded to S3...");
 };
 
+const getDumpDir = (filePath: string) => {
+  return `${filePath}_dir`;
+}
+
 const dumpToFile = async (filePath: string) => {
   console.log("Dumping DB to file...");
 
+  const dumpDir = getDumpDir(filePath);
+
   await new Promise((resolve, reject) => {
-    exec(`pg_dump --dbname=${env.BACKUP_DATABASE_URL} --format=tar | gzip > ${filePath}`, (error, stdout, stderr) => {
+    // Parallel dump to directory format
+    exec(`pg_dump -v -Fd -j 4 --dbname=${env.BACKUP_DATABASE_URL} -f ${dumpDir}`, (error, stdout, stderr) => {
       if (error) {
-        reject({ error: error, stderr: stderr.trimEnd() });
+        reject({ error, stderr: stderr.trimEnd() });
         return;
       }
 
-      // not all text in stderr will be a critical error, print the error / warning
-      if (stderr != "") {
+      if (stderr) {
         console.log({ stderr: stderr.trimEnd() });
-      }
-
-      // if stderr contains text, let the user know that it was potently just a warning message
-      if (stderr != "") {
         console.log(
-          `Potential warnings detected; Please ensure the backup file "${path.basename(
-            filePath
-          )}" contains all needed data`
+          `Potential warnings detected; Please ensure the backup directory "${dumpDir}" contains all needed data`
         );
       }
 
-      // check if archive is valid and contains data
-      const isValidArchive = execSync(`gzip -cd ${filePath} | head -c1`).length == 1 ? true : false;
-      if (isValidArchive == false) {
-        reject({ error: "Backup archive file is invalid or empty; check for errors above" });
-        return;
+      try {
+        // Archive directory as .tar.gz
+        execSync(`tar -czf ${filePath} -C ${dumpDir} .`);
+
+        // Validate archive
+        const isValidArchive = execSync(`gzip -cd ${filePath} | head -c1`).length === 1;
+        if (!isValidArchive) {
+          reject({ error: "Backup archive file is invalid or empty; check for errors above" });
+          return;
+        }
+
+        console.log("Backup archive file is valid");
+        console.log("Backup filesize:", filesize(statSync(filePath).size));
+
+        resolve(undefined);
+      } catch (archiveError) {
+        reject({ error: archiveError });
       }
-
-      console.log("Backup archive file is valid");
-      console.log("Backup filesize:", filesize(statSync(filePath).size));
-
-      resolve(undefined);
     });
   });
 
   console.log("DB dumped to file...");
 };
 
-const deleteFile = async (path: string) => {
-  console.log("Deleting file...");
+const deleteFile = async (filePath: string) => {
+  console.log("Deleting backup files...");
+
+  const dumpDir = getDumpDir(filePath);
+
+  // Delete the .tar.gz archive
   await new Promise((resolve, reject) => {
-    unlink(path, (err) => {
-      reject({ error: err });
-      return;
+    unlink(filePath, (err) => {
+      if (err) {
+        reject({ error: err });
+        return;
+      }
+      resolve(undefined);
     });
-    resolve(undefined);
   });
+
+  // Delete the dump directory recursively
+  await new Promise((resolve, reject) => {
+    rm(dumpDir, { recursive: true, force: true }, (err) => {
+      if (err) {
+        reject({ error: err });
+        return;
+      }
+      resolve(undefined);
+    });
+  });
+
+  console.log("Backup files deleted.");
 };
 
 export const backup = async () => {
