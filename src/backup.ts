@@ -8,6 +8,8 @@ import os from "os";
 
 import { env } from "./env";
 
+const numCores = os.cpus().length;
+
 const uploadToS3 = async ({ name, path }: { name: string; path: string }) => {
   console.log("Uploading backup to S3...");
 
