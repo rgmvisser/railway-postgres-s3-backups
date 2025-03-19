@@ -24,7 +24,7 @@ COPY --from=build /root/dist ./dist
 ARG PG_VERSION='15'
 
 RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main && \
-    apk add --update --no-cache nodejs npm zstd
+    apk add --update --no-cache nodejs npm zstd libzstd
 
 CMD pg_isready --dbname=$BACKUP_DATABASE_URL && \
     pg_dump --version && \
