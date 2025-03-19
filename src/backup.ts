@@ -25,7 +25,7 @@ const uploadToS3 = async ({ name, path }: { name: string; path: string }) => {
   }
 
   const client = new S3Client(clientOptions);
-
+  console.time("S3 Upload");
   await new Upload({
     client,
     params: {
@@ -34,6 +34,7 @@ const uploadToS3 = async ({ name, path }: { name: string; path: string }) => {
       Body: createReadStream(path),
     },
   }).done();
+  console.timeEnd("S3 Upload");
 
   console.log("Backup uploaded to S3...");
 };
