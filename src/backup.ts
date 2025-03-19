@@ -46,8 +46,8 @@ const dumpToFile = async (filePath: string) => {
   const dumpDir = getDumpDir(filePath);
 
   await new Promise((resolve, reject) => {
-    // Parallel dump to directory format
-    exec(`pg_dump -v -Fd -j 4 --dbname=${env.BACKUP_DATABASE_URL} -f ${dumpDir}`, (error, stdout, stderr) => {
+    // Parallel dump to directory format with no compression
+    exec(`pg_dump -v -Fd -j 8 -Z0 --dbname=${env.BACKUP_DATABASE_URL} -f ${dumpDir}`, (error, stdout, stderr) => {
       if (error) {
         reject({ error, stderr: stderr.trimEnd() });
         return;
