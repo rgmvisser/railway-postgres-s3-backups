@@ -41,7 +41,7 @@ const uploadToS3 = async ({ name, path }: { name: string; path: string }) => {
 
 const getDumpDir = (filePath: string) => {
   return `${filePath}_dir`;
-}
+};
 
 const dumpToFile = async (filePath: string) => {
   console.log("Dumping DB to file...");
@@ -67,11 +67,11 @@ const dumpToFile = async (filePath: string) => {
         console.log("Starting archiving");
         console.time("archiving");
         // Archive directory as .tar.gz
-        
+
         execSync(`tar -cf - -C ${dumpDir} . | zstd -T${numCores} -o ${filePath}`);
         console.timeEnd("archiving");
         // Validate archive
-        const isValidArchive = execSync(`gzip -cd ${filePath} | head -c1`).length === 1;
+        const isValidArchive = execSync(`zstd -cd ${filePath} | head -c1`).length === 1;
         if (!isValidArchive) {
           reject({ error: "Backup archive file is invalid or empty; check for errors above" });
           return;
