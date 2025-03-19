@@ -61,9 +61,12 @@ const dumpToFile = async (filePath: string) => {
       }
 
       try {
+        console.log("Starting archiving");
+        console.time("archiving");
         // Archive directory as .tar.gz
-        execSync(`tar -czf ${filePath} -C ${dumpDir} .`);
-
+        
+        execSync(`tar -cf - -C ${dumpDir} . | zstd -T${numCores} -o ${filePath}`);
+        console.timeEnd("archiving");
         // Validate archive
         const isValidArchive = execSync(`gzip -cd ${filePath} | head -c1`).length === 1;
         if (!isValidArchive) {
