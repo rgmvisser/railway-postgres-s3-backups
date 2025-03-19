@@ -1,4 +1,4 @@
-FROM alpine:3.18 AS build
+FROM alpine:3.21 AS build
 
 RUN apk add --update --no-cache nodejs npm
 
@@ -14,7 +14,7 @@ RUN npm install && \
     npm run build && \
     npm prune --production
 
-FROM alpine:3.18
+FROM alpine:3.21
 
 WORKDIR /root
 
@@ -24,7 +24,7 @@ COPY --from=build /root/dist ./dist
 ARG PG_VERSION='15'
 
 RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main && \
-    apk add --update --no-cache nodejs npm zstd libzstd
+    apk add --update --no-cache nodejs npm zstd
 
 CMD pg_isready --dbname=$BACKUP_DATABASE_URL && \
     pg_dump --version && \
