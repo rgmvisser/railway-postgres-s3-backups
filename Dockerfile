@@ -24,7 +24,7 @@ COPY --from=build /root/dist ./dist
 ARG PG_VERSION='15'
 
 RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main && \
-    apk add --update --no-cache nodejs npm
+    apk add --update --no-cache nodejs npm aws-cli
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 RUN apk update
 RUN apk add zstd=1.5.7-r0
