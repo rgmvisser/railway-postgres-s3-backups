@@ -28,7 +28,7 @@ RUN apk add --update --no-cache postgresql${PG_VERSION}-client --repository=http
     apk add --update --no-cache nodejs npm aws-cli pv
 RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 RUN apk update
-RUN apk add zstd=1.5.7-r0
+RUN apk add zstd=1.5.7-r1
 
 CMD pg_isready --dbname=$BACKUP_DATABASE_URL && \
     pg_dump --version && \
